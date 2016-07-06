@@ -38,14 +38,14 @@
 /********************************************************************************************************
  *                                               GLOBAL VARIABLES
  ********************************************************************************************************/
-
 typedef enum Key_Status{  
 	 Key_None = 0, Key_Short, Key_Long 
 } KeyStatus;
 /********************************************************************************************************
  *                                               EXTERNAL VARIABLES
  ********************************************************************************************************/
-
+extern uint8_t  Key_Up;
+extern uint32_t Time_1ms;
  
 /********************************************************************************************************
  *                                               EXTERNAL FUNCTIONS
@@ -66,7 +66,37 @@ typedef enum Key_Status{
  *                                               PUBLIC FUNCTIONS
  ********************************************************************************************************/
  
-KeyStatus Key_Scan(void);                          // 按键扫描驱动
+/*********************************************************************
+ * @fn        Key_Scan()
+ *
+ * @brief     按键扫描驱动 
+ *
+ * @param     None
+ *
+ * @return    Key_None：按键无效   Key_Short：按键短按   Key_Long：按键长按
+ */
+KeyStatus Key_Scan(void);
+
+/*********************************************************************
+ * @fn        HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)()
+ *
+ * @brief     TIM2 detection callbacks.
+ *
+ * @param     htim：所用定时器结构体   
+ *
+ * @return    None
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
+/*********************************************************************
+ * @fn        HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)()
+ *
+ * @brief     EXTI line detection callbacks.
+ *
+ * @param     GPIO_Pin: Specifies the pins connected EXTI line  
+ *
+ * @return    None
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
  /********************************************************************************************************
  *                                               LOCAL FUNCTIONS

@@ -33,13 +33,13 @@
 /********************************************************************************************************
  *                                               GLOBAL VARIABLES
  ********************************************************************************************************/
-
+uint8_t  Key_Up = 0;
+uint32_t Time_1ms = 0;
 
 /********************************************************************************************************
  *                                               EXTERNAL VARIABLES
  ********************************************************************************************************/
-extern uint8_t  Key_Up;
-extern uint32_t Time_1ms;
+extern TIM_HandleTypeDef htim2;
  
 /********************************************************************************************************
  *                                               EXTERNAL FUNCTIONS
@@ -65,21 +65,81 @@ extern uint32_t Time_1ms;
  *
  * @brief     按键扫描驱动 
  *
- * @param     none
+ * @param     None
  *
- * @return    Key_None--按键无效   Key_Short--按键短按   Key_Long--按键长按
+ * @return    Key_None：按键无效   Key_Short：按键短按   Key_Long：按键长按
  */
 KeyStatus Key_Scan(void)
 {
 	if(Key_Up == 1)        // 有按键松起
 	{
-		Time_1ms = 0;
+		
 		Key_Up = 0;
-		if(Time_1ms > Long_Thre)       return Key_Long;         // 按键按下时间大于2s      长按
-		else if(Time_1ms > Short_Thre) return Key_Short;        // 按键按下时间小于2s      短按      
-		else                           return Key_None;         // 视作按键抖动
+		if(Time_1ms > Long_Thre)       
+		{
+			//Time_1ms = 0;          // 启动定时器前已清零
+			return Key_Long;         // 按键按下时间大于2s      长按
+		}
+		else if(Time_1ms > Short_Thre) 
+		{
+			//Time_1ms = 0;
+			return Key_Short;        // 按键按下时间小于2s      短按 
+		}			
+		else                           
+		{
+			//Time_1ms = 0;
+			return Key_None;         // 视作按键抖动
+		}
 	}
 	return Key_None;
+}
+/*********************************************************************
+ * @fn        HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)()
+ *
+ * @brief     TIM2 detection callbacks.
+ *
+ * @param     htim：所用定时器结构体   
+ *
+ * @return    None
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htim);
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the __HAL_TIM_PeriodElapsedCallback could be implemented in the user file
+   */
+	Time_1ms++;        
+}
+/*********************************************************************
+ * @fn        HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)()
+ *
+ * @brief     EXTI line detection callbacks.
+ *
+ * @param     GPIO_Pin: Specifies the pins connected EXTI line  
+ *
+ * @return    None
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(GPIO_Pin);
+  /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_GPIO_EXTI_Callback could be implemented in the user file
+   */
+	if( HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12) )     // 上升沿
+	{
+			HAL_TIM_Base_Stop_IT(&htim2);    // 按键松起，关闭定时器
+			Key_Up = 1;                      // 按键松起标志
+	}
+	else                                           // 下降沿                                   
+	{
+		if(Key_Up == 0)	      // 上一次按键响应完成
+		{
+			Time_1ms = 0;
+			HAL_TIM_Base_Start_IT(&htim2);   // 按键按下，开启定时器
+		}
+	}
 }
  /********************************************************************************************************
  *                                               LOCAL FUNCTIONS
